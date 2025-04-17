@@ -91,7 +91,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`
@@ -724,6 +724,20 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
+        'proselint',
+        'ruff',
+        'rust_hdl',
+        'sphinx-lint',
+        'tex-fmt',
+        'texlab',
+        'typos-lsp',
+        'verible',
+        'vsg',
+        'yamllint',
+        -- These need npm
+        'jsonlint',
+        'markdownlint',
+        'prettierd',
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -782,10 +796,9 @@ require('lazy').setup({
         -- You can use 'stop_after_first' to run the first available formatter from the list
         -- javascript = { "prettierd", "prettier", stop_after_first = true },
         bash = { 'shfmt' },
-        latex = { 'tex-fmt' },
-        tex = { 'tex-fmt' },
         python = { 'ruff' },
         systemverilog = { 'verible' },
+        tex = { 'tex-fmt' },
         verilog = { 'verible' },
         vhdl = { 'vsg' },
         -- Prettier requires npm
