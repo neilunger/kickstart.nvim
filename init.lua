@@ -739,7 +739,10 @@ require('lazy').setup({
         'markdownlint',
         'prettierd',
       })
-      require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+      require('mason-tool-installer').setup {
+        ensure_installed = ensure_installed,
+        auto_update = true,
+      }
 
       require('mason-lspconfig').setup {
         ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
@@ -1047,8 +1050,19 @@ require('lazy').setup({
   },
 })
 
+-- Check for Lazy+plugin updates on VimEnter
+vim.api.nvim_create_autocmd({ 'VimEnter' }, {
+  group = vim.api.nvim_create_augroup('lazy-auto-update', { clear = false }),
+  callback = function()
+    if require('lazy.status').has_updates then
+      require('lazy').update { show = false }
+    end
+  end,
+})
+
 -- Trim whitespace and ending blank lines on write
 vim.api.nvim_create_autocmd({ 'BufWritePre' }, {
+  group = vim.api.nvim_create_augroup('mini-trailspace-auto-trim', { clear = false }),
   callback = function()
     require('mini.trailspace').trim()
     require('mini.trailspace').trim_last_lines()
