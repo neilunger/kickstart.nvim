@@ -1073,7 +1073,7 @@ vim.api.nvim_create_autocmd({ 'BufWritePre' }, {
   group = vim.api.nvim_create_augroup('mini-trailspace-auto-trim', { clear = false }),
   callback = function()
     local ft = vim.bo.filetype
-    if ft ~= 'diff' and ft ~= 'git' and ft ~= 'unite' and ft ~= 'qf' and ft ~= 'help' and ft ~= 'fugitive' then
+    if ft ~= 'diff' and ft ~= 'git' and ft ~= 'gitcommit' and ft ~= 'unite' and ft ~= 'qf' and ft ~= 'help' then
       require('mini.trailspace').trim()
       require('mini.trailspace').trim_last_lines()
     end
