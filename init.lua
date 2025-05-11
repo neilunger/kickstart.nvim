@@ -1075,7 +1075,9 @@ vim.api.nvim_create_autocmd({ 'BufWritePre' }, {
     local ft = vim.bo.filetype
     if ft ~= 'diff' and ft ~= 'git' and ft ~= 'gitcommit' and ft ~= 'unite' and ft ~= 'qf' and ft ~= 'help' then
       require('mini.trailspace').trim()
-      require('mini.trailspace').trim_last_lines()
+      if ft ~= 'c' and ft ~= 'c++' then
+        require('mini.trailspace').trim_last_lines()
+      end
     end
   end,
 })
