@@ -1022,7 +1022,7 @@ require('lazy').setup({
   -- require 'kickstart.plugins.debug',
   -- require 'kickstart.plugins.indent_line',
   require 'kickstart.plugins.lint',
-  require 'kickstart.plugins.autopairs',
+  -- require 'kickstart.plugins.autopairs',
   require 'kickstart.plugins.neo-tree',
   require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
@@ -1072,8 +1072,11 @@ vim.api.nvim_create_autocmd({ 'VimEnter' }, {
 vim.api.nvim_create_autocmd({ 'BufWritePre' }, {
   group = vim.api.nvim_create_augroup('mini-trailspace-auto-trim', { clear = false }),
   callback = function()
-    require('mini.trailspace').trim()
-    require('mini.trailspace').trim_last_lines()
+    local ft = vim.bo.filetype
+    if ft ~= 'diff' and ft ~= 'git' and ft ~= 'unite' and ft ~= 'qf' and ft ~= 'help' and ft ~= 'fugitive' then
+      require('mini.trailspace').trim()
+      require('mini.trailspace').trim_last_lines()
+    end
   end,
 })
 
