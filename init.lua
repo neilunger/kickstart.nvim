@@ -247,7 +247,7 @@ rtp:prepend(lazypath)
 -- NOTE: Here is where you install your plugins.
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
-  'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
+  { 'NMAC427/guess-indent.nvim', opts = {} },
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
@@ -460,6 +460,17 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sn', function()
         builtin.find_files { cwd = vim.fn.stdpath 'config' }
       end, { desc = '[S]earch [N]eovim files' })
+
+      -- Trim whitespace and ending blank lines
+      vim.keymap.set('n', '<leader>c', function()
+        local ft = vim.bo.filetype
+        if ft ~= 'diff' and ft ~= 'git' and ft ~= 'gitcommit' and ft ~= 'unite' and ft ~= 'qf' and ft ~= 'help' then
+          require('mini.trailspace').trim()
+          if ft ~= 'c' and ft ~= 'c++' then
+            require('mini.trailspace').trim_last_lines()
+          end
+        end
+      end, { desc = '[C]lean whitespace in current buffer' })
     end,
   },
 
@@ -745,6 +756,7 @@ require('lazy').setup({
         -- These need npm
         'jsonlint',
         'markdownlint',
+        'npm-groovy-lint',
         'prettierd',
       })
       require('mason-tool-installer').setup {
@@ -812,7 +824,8 @@ require('lazy').setup({
         tex = { 'tex-fmt' },
         verilog = { 'verible' },
         vhdl = { 'vsg' },
-        -- Prettier requires npm
+        -- These require npm
+        groovy = { 'npm-groovy-lint' },
         json = { 'prettierd', 'prettier', stop_after_first = true },
         markdown = { 'prettierd', 'prettier', stop_after_first = true },
         yaml = { 'prettierd', 'prettier', stop_after_first = true },
@@ -842,12 +855,12 @@ require('lazy').setup({
           -- `friendly-snippets` contains a variety of premade snippets.
           --    See the README about individual language/framework/plugin snippets:
           --    https://github.com/rafamadriz/friendly-snippets
-          -- {
-          --   'rafamadriz/friendly-snippets',
-          --   config = function()
-          --     require('luasnip.loaders.from_vscode').lazy_load()
-          --   end,
-          -- },
+          {
+            'rafamadriz/friendly-snippets',
+            config = function()
+              require('luasnip.loaders.from_vscode').lazy_load()
+            end,
+          },
         },
         opts = {},
       },
@@ -1008,6 +1021,9 @@ require('lazy').setup({
   },
   {
     'nvim-treesitter/nvim-treesitter-context',
+    config = function()
+      require('treesitter-context').setup {}
+    end,
   },
 
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
@@ -1064,20 +1080,6 @@ vim.api.nvim_create_autocmd({ 'VimEnter' }, {
   callback = function()
     if require('lazy.status').has_updates then
       require('lazy').update { show = false }
-    end
-  end,
-})
-
--- Trim whitespace and ending blank lines on write
-vim.api.nvim_create_autocmd({ 'BufWritePre' }, {
-  group = vim.api.nvim_create_augroup('mini-trailspace-auto-trim', { clear = false }),
-  callback = function()
-    local ft = vim.bo.filetype
-    if ft ~= 'diff' and ft ~= 'git' and ft ~= 'gitcommit' and ft ~= 'unite' and ft ~= 'qf' and ft ~= 'help' then
-      require('mini.trailspace').trim()
-      if ft ~= 'c' and ft ~= 'c++' then
-        require('mini.trailspace').trim_last_lines()
-      end
     end
   end,
 })
