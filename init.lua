@@ -247,7 +247,12 @@ rtp:prepend(lazypath)
 -- NOTE: Here is where you install your plugins.
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
-  { 'NMAC427/guess-indent.nvim', opts = {} },
+  {
+    'NMAC427/guess-indent.nvim',
+    config = function()
+      require('guess-indent').setup {}
+    end,
+  },
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
@@ -818,8 +823,9 @@ require('lazy').setup({
         --
         -- You can use 'stop_after_first' to run the first available formatter from the list
         -- javascript = { "prettierd", "prettier", stop_after_first = true },
+        ['_'] = { 'trim_whitespace', 'trim_newlines' }, -- _ is any filetype without a formatter
         bash = { 'shfmt' },
-        python = { 'ruff' },
+        python = { 'ruff_format', 'ruff_organize_imports' },
         systemverilog = { 'verible' },
         tex = { 'tex-fmt' },
         verilog = { 'verible' },
