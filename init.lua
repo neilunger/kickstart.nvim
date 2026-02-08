@@ -490,6 +490,7 @@ require('lazy').setup({
       -- Mason must be loaded before its dependents so we need to set it up here.
       -- NOTE: `opts = {}` is the same as calling `require('mason').setup({})`
       { 'mason-org/mason.nvim', opts = {} },
+      { 'mason-org/mason-lspconfig.nvim', opts = {} },
       'WhoIsSethDaniel/mason-tool-installer.nvim',
 
       -- Useful status updates for LSP.
@@ -616,17 +617,6 @@ require('lazy').setup({
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         -- ts_ls = {},
-        --
-        -- NEIL FIX THIS
-        -- Requires npm
-        --bashls = {
-        --  settings = {
-        --    bashIde = {
-        --      -- Enable all shellcheck rules
-        --      shellcheckArguments = { '-o', 'all' },
-        --    },
-        --  },
-        --},
       }
 
       -- Ensure the servers and tools above are installed
@@ -652,6 +642,7 @@ require('lazy').setup({
         'vsg',
         'yamllint',
         -- These need npm
+        'bash-language-server',
         'jsonlint',
         'markdownlint',
         'npm-groovy-lint',
@@ -695,6 +686,14 @@ require('lazy').setup({
         },
       })
       vim.lsp.enable 'lua_ls'
+      vim.lsp.config('bashls', {
+        settings = {
+          bashIde = {
+            -- Enable all shellcheck rules
+            shellcheckArguments = { '-o', 'all' },
+          },
+        },
+      })
     end,
   },
 
