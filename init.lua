@@ -736,6 +736,7 @@ require('lazy').setup({
         ['_'] = { 'trim_whitespace', 'trim_newlines' }, -- _ is any filetype without a formatter
         bash = { 'shfmt' },
         python = { 'ruff_format', 'ruff_organize_imports' },
+        sh = { 'shfmt' },
         systemverilog = { 'verible' },
         tex = { 'tex-fmt' },
         verilog = { 'verible' },
