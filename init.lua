@@ -635,6 +635,7 @@ require('lazy').setup({
         'ruff',
         'rust_hdl',
         'sphinx-lint',
+        'taplo',
         'tex-fmt',
         'texlab',
         'typos-lsp',
@@ -739,6 +740,7 @@ require('lazy').setup({
         sh = { 'shfmt' },
         systemverilog = { 'verible' },
         tex = { 'tex-fmt' },
+        toml = { 'taplo' },
         verilog = { 'verible' },
         vhdl = { 'vsg' },
         -- These require npm
