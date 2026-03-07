@@ -1,0 +1,6 @@
+[default.extend-words]
+earch = "earch"         # [s]earch in neovim config
+eferences = "eferences" # [r]eferences
+ymbols = "ymbols"       # [s]ymbols
+nner = "nner"           # [i]nner
+tage = "tage"           # [s]tage

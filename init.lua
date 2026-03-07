@@ -91,7 +91,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
@@ -102,7 +102,7 @@ vim.g.have_nerd_font = false
 vim.o.number = true
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
--- vim.o.relativenumber = true
+vim.o.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.o.mouse = 'a'
@@ -198,10 +198,10 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
 -- TIP: Disable arrow keys in normal mode
--- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
--- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
--- vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
--- vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
+vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
+vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
+vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
+vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
 
 -- Keybinds to make split navigation easier.
 --  Use CTRL+<hjkl> to switch between windows
@@ -286,6 +286,7 @@ require('lazy').setup({
         topdelete = { text = '‾' }, ---@diagnostic disable-line: missing-fields
         changedelete = { text = '~' }, ---@diagnostic disable-line: missing-fields
       },
+      current_line_blame = true,
     },
   },
 
@@ -476,6 +477,14 @@ require('lazy').setup({
 
       -- Shortcut for searching your Neovim configuration files
       vim.keymap.set('n', '<leader>sn', function() builtin.find_files { cwd = vim.fn.stdpath 'config' } end, { desc = '[S]earch [N]eovim files' })
+      -- Trim whitespace and ending blank lines
+      vim.keymap.set('n', '<leader>c', function()
+        local ft = vim.bo.filetype
+        if ft ~= 'diff' and ft ~= 'git' and ft ~= 'gitcommit' and ft ~= 'unite' and ft ~= 'qf' and ft ~= 'help' then
+          require('mini.trailspace').trim()
+          if ft ~= 'c' and ft ~= 'c++' then require('mini.trailspace').trim_last_lines() end
+        end
+      end, { desc = '[C]lean whitespace in current buffer' })
     end,
   },
 
@@ -534,6 +543,10 @@ require('lazy').setup({
       --    That is to say, every time a new file is opened that is associated with
       --    an lsp (for example, opening `main.rs` is associated with `rust_analyzer`) this
       --    function will be executed to configure the current buffer
+
+      -- If in Diff mode, don't load any LSPs
+      if vim.opt.diff:get() then return end
+
       vim.api.nvim_create_autocmd('LspAttach', {
         group = vim.api.nvim_create_augroup('kickstart-lsp-attach', { clear = true }),
         callback = function(event)
@@ -644,6 +657,13 @@ require('lazy').setup({
             Lua = {},
           },
         },
+        bashls = {
+          settings = {
+            bashIde = { -- Enable all shellcheck rules
+              shellcheckArguments = { '-o', 'all' },
+            },
+          },
+        },
       }
 
       -- Ensure the servers and tools above are installed
@@ -656,9 +676,26 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         -- You can add other tools here that you want Mason to install
+        'proselint',
+        'ruff',
+        'rust_hdl',
+        'sphinx-lint',
+        'taplo',
+        'tex-fmt',
+        'texlab',
+        'typos-lsp',
+        'verible',
+        'vsg',
+        'yamllint',
+        -- These need npm
+        'bash-language-server',
+        'jsonlint',
+        'markdownlint',
+        'npm-groovy-lint',
+        'prettierd',
       })
 
-      require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+      require('mason-tool-installer').setup { ensure_installed = ensure_installed, auto_update = true }
 
       for name, server in pairs(servers) do
         vim.lsp.config(name, server)
@@ -682,21 +719,22 @@ require('lazy').setup({
     ---@module 'conform'
     ---@type conform.setupOpts
     opts = {
-      notify_on_error = false,
-      format_on_save = function(bufnr)
-        -- Disable "format_on_save lsp_fallback" for languages that don't
-        -- have a well standardized coding style. You can add additional
-        -- languages here or re-enable it for the disabled ones.
-        local disable_filetypes = { c = true, cpp = true }
-        if disable_filetypes[vim.bo[bufnr].filetype] then
-          return nil
-        else
-          return {
-            timeout_ms = 500,
-            lsp_format = 'fallback',
-          }
-        end
-      end,
+      --notify_on_error = false,
+      -- Disable formatting on save for now
+      --format_on_save = function(bufnr)
+      --  -- Disable "format_on_save lsp_fallback" for languages that don't
+      --  -- have a well standardized coding style. You can add additional
+      --  -- languages here or re-enable it for the disabled ones.
+      --  local disable_filetypes = { c = true, cpp = true }
+      --  if disable_filetypes[vim.bo[bufnr].filetype] then
+      --    return nil
+      --  else
+      --    return {
+      --      timeout_ms = 500,
+      --      lsp_format = 'fallback',
+      --    }
+      --  end
+      --end,
       formatters_by_ft = {
         lua = { 'stylua' },
         -- Conform can also run multiple formatters sequentially
@@ -704,6 +742,20 @@ require('lazy').setup({
         --
         -- You can use 'stop_after_first' to run the first available formatter from the list
         -- javascript = { "prettierd", "prettier", stop_after_first = true },
+        ['_'] = { ' trim_whitespace', 'trim_newlines' }, -- _ is any filetype without a formatter
+        bash = { 'shfmt' },
+        python = { 'ruff_format', 'ruff_organize_imports' },
+        sh = { 'shfmt' },
+        systemverilog = { 'verible' },
+        tex = { 'tex-fmt' },
+        toml = { 'taplo' },
+        verilog = { 'verible' },
+        vhdl = { 'vsg' },
+        -- These require npm
+        groovy = { 'npm-groovy-lint' },
+        json = { 'prettierd', 'prettier', stop_after_first = true },
+        markdown = { 'prettierd', 'prettier', stop_after_first = true },
+        yaml = { 'prettierd', 'prettier', stop_after_first = true },
       },
     },
   },
@@ -728,12 +780,10 @@ require('lazy').setup({
           -- `friendly-snippets` contains a variety of premade snippets.
           --    See the README about individual language/framework/plugin snippets:
           --    https://github.com/rafamadriz/friendly-snippets
-          -- {
-          --   'rafamadriz/friendly-snippets',
-          --   config = function()
-          --     require('luasnip.loaders.from_vscode').lazy_load()
-          --   end,
-          -- },
+          {
+            'rafamadriz/friendly-snippets',
+            config = function() require('luasnip.loaders.from_vscode').lazy_load() end,
+          },
         },
         opts = {},
       },
@@ -902,6 +952,7 @@ require('lazy').setup({
       })
     end,
   },
+  { 'nvim-treesitter/nvim-treesitter-context', config = function() require('treesitter-context').setup() end },
 
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
@@ -914,10 +965,10 @@ require('lazy').setup({
   --
   -- require 'kickstart.plugins.debug',
   -- require 'kickstart.plugins.indent_line',
-  -- require 'kickstart.plugins.lint',
+  require 'kickstart.plugins.lint',
   -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+  require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
@@ -949,6 +1000,14 @@ require('lazy').setup({
       lazy = '💤 ',
     },
   },
+})
+
+-- Check for Lazy+plugin updates on VimEnter
+vim.api.nvim_create_autocmd({ 'VimEnter' }, {
+  group = vim.api.nvim_create_augroup('lazy-auto-update', { clear = false }),
+  callback = function()
+    if require('lazy.status').has_updates then require('lazy').update { show = false } end
+  end,
 })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
