@@ -99,7 +99,7 @@ do
   vim.g.maplocalleader = ' '
 
   -- Set to true if you have a Nerd Font installed and selected in the terminal
-  vim.g.have_nerd_font = false
+  vim.g.have_nerd_font = true
 
   -- [[ Setting options ]]
   --  See `:help vim.o`
@@ -110,7 +110,7 @@ do
   vim.o.number = true
   -- You can also add relative line numbers, to help with jumping.
   --  Experiment for yourself to see if you like it!
-  -- vim.o.relativenumber = true
+  vim.o.relativenumber = true
 
   -- Enable mouse mode, can be useful for resizing splits for example!
   vim.o.mouse = 'a'
@@ -214,10 +214,10 @@ do
   vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
   -- TIP: Disable arrow keys in normal mode
-  -- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
-  -- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
-  -- vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
-  -- vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
+  vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
+  vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
+  vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
+  vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
 
   -- Keybinds to make split navigation easier.
   --  Use CTRL+<hjkl> to switch between windows
@@ -360,6 +360,7 @@ do
       topdelete = { text = '‾' }, ---@diagnostic disable-line: missing-fields
       changedelete = { text = '~' }, ---@diagnostic disable-line: missing-fields
     },
+    current_line_blame = true,
   }
 
   -- Useful plugin to show you pending keybinds.
@@ -576,6 +577,14 @@ do
 
   -- Shortcut for searching your Neovim configuration files
   vim.keymap.set('n', '<leader>sn', function() builtin.find_files { cwd = vim.fn.stdpath 'config' } end, { desc = '[S]earch [N]eovim files' })
+  -- Trim whitespace and ending blank lines
+  vim.keymap.set('n', '<leader>c', function()
+    local ft = vim.bo.filetype
+    if ft ~= 'diff' and ft ~= 'git' and ft ~= 'gitcommit' and ft ~= 'unite' and ft ~= 'qf' and ft ~= 'help' then
+      require('mini.trailspace').trim()
+      if ft ~= 'c' and ft ~= 'c++' then require('mini.trailspace').trim_last_lines() end
+    end
+  end, { desc = '[C]lean whitespace in current buffer' })
 end
 
 -- ============================================================
@@ -617,6 +626,10 @@ do
   --    That is to say, every time a new file is opened that is associated with
   --    an lsp (for example, opening `main.rs` is associated with `rust_analyzer`) this
   --    function will be executed to configure the current buffer
+
+  -- if in Diff mode, don't load any LSPs
+  if vim.opt.diff:get() then return end
+
   vim.api.nvim_create_autocmd('LspAttach', {
     group = vim.api.nvim_create_augroup('kickstart-lsp-attach', { clear = true }),
     callback = function(event)
@@ -730,6 +743,13 @@ do
         Lua = {
           format = { enable = false }, -- Disable formatting (formatting is done by stylua)
         },
+        bashls = {
+          settings = {
+            bashIde = { -- Enable all shellcheck rules
+              shellcheckArguments = { '-o', 'all' },
+            },
+          },
+        },
       },
     },
   }
@@ -754,14 +774,32 @@ do
   local ensure_installed = vim.tbl_keys(servers or {})
   vim.list_extend(ensure_installed, {
     -- You can add other tools here that you want Mason to install
+    'proselint',
+    'ruff',
+    'rust_hdl',
+    'sphinx-lint',
+    'taplo',
+    'tex-fmt',
+    'texlab',
+    'typos-lsp',
+    'verible',
+    'vsg',
+    'yamllint',
+    -- These need npm
+    'bash-language-server',
+    'jsonlint',
+    'markdownlint',
+    'prettierd',
   })
 
-  require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+  require('mason-tool-installer').setup { ensure_installed = ensure_installed, auto_update = true }
 
   for name, server in pairs(servers) do
     vim.lsp.config(name, server)
     vim.lsp.enable(name)
   end
+
+  require('mason-lspconfig').setup()
 end
 
 -- ============================================================
@@ -772,7 +810,7 @@ do
   -- [[ Formatting ]]
   vim.pack.add { gh 'stevearc/conform.nvim' }
   require('conform').setup {
-    notify_on_error = false,
+    --notify_on_error = false,
     format_on_save = function(bufnr)
       -- You can specify filetypes to autoformat on save here:
       local enabled_filetypes = {
@@ -796,6 +834,21 @@ do
       --
       -- You can use 'stop_after_first' to run the first available formatter from the list
       -- javascript = { "prettierd", "prettier", stop_after_first = true },
+      ['_'] = { 'trim_whitespace', 'trim_newlines' }, -- '_' is any filetype without a formatter
+      bash = { 'shfmt' },
+      lua = { 'stylua' },
+      python = { 'ruff_format', 'ruff_organize_imports' },
+      sh = { 'shfmt' },
+      systemverilog = { 'verible' },
+      verilog = { 'verible' },
+      tex = { 'tex-fmt' },
+      toml = { 'taplo' },
+      vhdl = { 'vsg' },
+      -- These require npm
+      groovy = { 'npm-groovy-lint' },
+      json = { 'prettierd', 'prettier', stop_after_first = true },
+      markdown = { 'prettierd', 'prettier', stop_after_first = true },
+      yaml = { 'prettierd', 'prettier', stop_after_first = true },
     },
   }
 
@@ -818,8 +871,8 @@ do
   --    See the README about individual language/framework/plugin snippets:
   --    https://github.com/rafamadriz/friendly-snippets
   --
-  -- vim.pack.add { gh 'rafamadriz/friendly-snippets' }
-  -- require('luasnip.loaders.from_vscode').lazy_load()
+  vim.pack.add { gh 'rafamadriz/friendly-snippets' }
+  require('luasnip.loaders.from_vscode').lazy_load()
 
   -- [[ Autocomplete Engine ]]
   vim.pack.add { { src = gh 'saghen/blink.cmp', version = vim.version.range '1.*' } }
@@ -944,6 +997,7 @@ do
       end
     end,
   })
+  vim.pack.add { { src = gh 'nvim-treesitter/nvim-treesitter-context' } }
 end
 
 -- ============================================================
@@ -962,10 +1016,10 @@ do
   --
   -- require 'kickstart.plugins.debug'
   -- require 'kickstart.plugins.indent_line'
-  -- require 'kickstart.plugins.lint'
+  require 'kickstart.plugins.lint'
   -- require 'kickstart.plugins.autopairs'
-  -- require 'kickstart.plugins.neo-tree'
-  -- require 'kickstart.plugins.gitsigns' -- adds gitsigns recommended keymaps
+  require 'kickstart.plugins.neo-tree'
+  require 'kickstart.plugins.gitsigns' -- adds gitsigns recommended keymaps
 
   -- NOTE: You can add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --
